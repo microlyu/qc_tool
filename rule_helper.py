@@ -427,8 +427,15 @@ def check_rule11(df, rule, excel_file_name):
     # 取得斜率的目标值
     target_min = float(rule.param1)
 
+    # 去除ana_slope 列的值为 '#DIV/0' 的非法值
+    # df_std = df_std[df_std[ana_slope] != np.nan]  # 这个地方需要注意，如果ana_slope的数据类型是float，那么这里的判断条件就是 != np.nan
+    df_std = df_std[df_std[ana_slope] != '#DIV/0!']  # 这个地方需要注意，如果ana_slope的数据类型是str，那么这里的判断条件就是 != '#DIV/0!' 
+    
+    # 将ana_slope的数据类型转换为 float
+    df_std[ana_slope] = df_std[ana_slope].astype('float')
+
     # 判断斜率是否都在目标值范围内
-    df_std['check_result'] = df_std.apply(lambda x: 'True' if (target_min <= float(x[ana_slope])) else 'False', axis=1)
+    df_std['check_result'] = df_std.apply(lambda x: 'True' if (target_min <= x[ana_slope]) else 'False', axis=1)
 
     df_std_false = df_std[df_std['check_result'] == 'False']
 
