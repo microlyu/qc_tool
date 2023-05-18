@@ -1,0 +1,5 @@
+pyinstaller
+tkinter
+tkintertable
+pandas
+numpy
