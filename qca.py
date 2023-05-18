@@ -264,13 +264,17 @@ class QCControlApp:
     def config_save(self):
         # 保存配置文件
         # 从界面上获取数据
+        global rules
         for i, rule in enumerate(rules):
             # Extract values from widgets
+            
+            scope = self.table.grid_slaves(row=i+1, column=2)[0].get()
             param1 = self.table.grid_slaves(row=i+1, column=4)[0].get()
             param2 = self.table.grid_slaves(row=i+1, column=5)[0].get()
             param3 = self.table.grid_slaves(row=i+1, column=6)[0].get()
             # enabled = self.table.grid_slaves(row=i+1, column=7)[0].cget("text")
             # enabled = self.table.grid_slaves(row=i+1, column=7)[0].cget("var")
+            rule.scope = scope
             rule.param1 = param1
             rule.param2 = param2
             rule.param3 = param3
@@ -284,8 +288,11 @@ class QCControlApp:
     # 点击恢复默认按钮的响应方法
     def config_reset(self):
         # 重置配置文件
+        global rules
         rules = get_default_rules()
         print("重置配置文件")
+        for rule in rules:
+            print(rule)
         # 关闭窗口
         self.config_window.destroy()
     
@@ -293,6 +300,7 @@ class QCControlApp:
     def config_name_save(self):
         # 保存配置文件
         # 从界面上获取数据，更新name_rules： 遍历self.name_table的所有行，获取样本名和规则，更新name_rules
+        global name_rules
         for row in range(1, self.name_table.grid_size()[1]):
             # Extract values from widgets
             key = self.name_table.grid_slaves(row=row, column=1)[0].get()
@@ -309,13 +317,14 @@ class QCControlApp:
     # 点击恢复默认按钮的响应方法
     def config_name_reset(self):
          # 重置配置文件
+        global name_rules
         name_rules = get_default_sample_name_rules()
         # 关闭窗口
         self.config_name_window.destroy()
 
 
     def about(self):
-        messagebox.showinfo("关于", "QCControl 1.0\n\n作者：LuYuan\n\nEmail: ron.lu@qq.com")
+        messagebox.showinfo("关于", "QCControl 1.0.0 \n\n作者：LuYuan\n\nEmail: ron.lu@qq.com")
 
 
 root = tk.Tk()
