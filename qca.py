@@ -13,29 +13,31 @@ import tkinter as tk
 from csv_helper import txt2csv
 from tkinter import filedialog
 from tkinter import messagebox
+from tkinter import ttk
 from rules import get_default_rules
 from rule_helper import check_rules
+from name_helper import get_default_sample_name_rules
 import datetime
 import os
 
 class QCControlApp:
     def __init__(self, master):
         self.master = master
-        master.title("徐中心质控数据分析工具")
+        master.title("徐中心质控数据分析小工具")
         # 设定窗口大小 1080*720
         # 设定窗口大小为屏幕大小
         master.state("zoomed")
         # master.geometry("1080x720")
         
         row_index=0
-        column_size=4
+        column_size=5
 
         # First row
-        self.title_label = tk.Label(master, text="徐中心质控数据分析工具", font=("Helvetica", 24))
+        self.title_label = tk.Label(master, text="徐中心质控数据分析小工具", font=("Helvetica", 24))
         # 占据整个窗口大小，并居中
         self.title_label.grid(row=row_index, column=0, columnspan=column_size-1, sticky="nsew", padx=10, pady=10)
         self.owner_info = tk.Button(master, text="?", command=self.about)
-        self.owner_info.grid(row=row_index, column=3, sticky="e", padx=10)
+        self.owner_info.grid(row=row_index, column=4, sticky="e", padx=10)
         row_index += 1
 
         # 插入一个横线 作为分割 , 宽度为屏幕宽度
@@ -50,8 +52,10 @@ class QCControlApp:
         self.file_button.grid(row=row_index, column=1,sticky="w", padx=0)
         self.analyze_button = tk.Button(master, text="数据分析", command=self.analyze)
         self.analyze_button.grid(row=row_index, column=2, sticky="w", padx=0)
+        self.config_sample_button = tk.Button(master, text="样本配置", command=self.config_sample)
+        self.config_sample_button.grid(row=row_index, column=3,  sticky="w", padx=0)
         self.config_button = tk.Button(master, text="分析配置", command=self.config)
-        self.config_button.grid(row=row_index, column=3,  sticky="w", padx=0)
+        self.config_button.grid(row=row_index, column=4,  sticky="w", padx=0)
         row_index += 1
 
         # Third row
@@ -69,7 +73,7 @@ class QCControlApp:
         self.output_label.grid(row=row_index, column=0, columnspan=column_size-1, sticky="w", padx=10)
         # 插入一个Button 用于清空输出
         self.clear_button = tk.Button(master, text="清空输出", command=self.clear_output)
-        self.clear_button.grid(row=row_index, column=3, sticky="e", padx=10)
+        self.clear_button.grid(row=row_index, column=4, sticky="e", padx=10)
         row_index += 1
 
         # Fifth row
@@ -99,27 +103,89 @@ class QCControlApp:
         # 进行规则分析
         self.output_text.insert(tk.END, f"2. 开始检查数据有效性....")
         file_name = os.path.splitext(txt_file)[0]
-        check_result = check_rules(file_name, rules)
-
-        self.output_text.insert(tk.END, f"数据检查完成。详细检查结果请查看文件[{file_name}.xls]\n")
-        self.output_text.insert(tk.END, f"\n")
-
-        # 根据check_result 输出结果
-        rulekeys = check_result.keys()
-        for rulekey in rulekeys:
-            # 输出 rulekey
-            # print(rulekey)
-
-            match_data = check_result[rulekey]
-            if match_data.empty:
-                self.output_text.insert(tk.END, f"[{rulekey}] 未匹配到数据；\n\n")
-                continue
-            self.output_text.insert(tk.END, f"[{rulekey}]匹配到的数据如下：\n")
-            self.output_text.insert(tk.END, f"{match_data}\n")
+        # 对下边一行代码进行异常catch处理
+        # try :
+        #     check_result = check_rules(file_name, rules, name_rules)
+        # except 
+        try:
+            check_result = check_rules(file_name, rules, name_rules)
+            self.output_text.insert(tk.END, f"数据检查完成。详细检查结果请查看文件[{file_name}.xls]\n")
             self.output_text.insert(tk.END, f"\n")
 
+            # 根据check_result 输出结果
+            rulekeys = check_result.keys()
+            for rulekey in rulekeys:
+                # 输出 rulekey
+                # print(rulekey)
+
+                match_data = check_result[rulekey]
+                if match_data.empty:
+                    self.output_text.insert(tk.END, f"[{rulekey}] 未匹配到数据；\n\n")
+                    continue
+                self.output_text.insert(tk.END, f"[{rulekey}]匹配到的数据如下：\n")
+                self.output_text.insert(tk.END, f"{match_data}\n")
+                self.output_text.insert(tk.END, f"\n")
+
+        except Exception as e:
+            self.output_text.insert(tk.END, f"数据检查过程中发生错误：\n {e}\n")
+
+        
     def clear_output(self):
         self.output_text.delete("1.0", tk.END)
+    
+    def config_sample(self):
+        self.config_name_window = tk.Toplevel(self.master)
+        self.name_table = tk.Frame(self.config_name_window)
+        self.name_table.pack()
+
+        # Column headers
+        no_label = tk.Label(self.name_table, text="NO", width=5)
+        no_label.grid(row=0, column=0)
+        key_label = tk.Label(self.name_table, text="样本类型", width=10)
+        key_label.grid(row=0, column=1)
+        formula_label = tk.Label(self.name_table, text="样本名规则", width=60)
+        formula_label.grid(row=0, column=2)
+
+        # contruct rows according to name_rules（dict object type）
+        row_idx = 1
+        for key in name_rules.keys():
+            no = tk.Label(self.name_table, text=row_idx, width=5)
+            no.grid(row=row_idx, column=0)
+
+            name_key = tk.Entry(self.name_table, width=10)
+            name_key.insert(0, key)
+            name_key.grid(row=row_idx, column=1)
+            name_key.config(state="readonly")
+
+            name_formula = tk.Entry(self.name_table, width=60)
+            name_formula.insert(0, name_rules[key])
+            name_formula.grid(row=row_idx, column=2)
+            row_idx += 1
+
+        # for i, name_rule in enumerate(name_rules, start=1):
+        #     no = tk.Label(self.name_table, text=i, width=5)
+        #     no.grid(row=i, column=0)
+
+        #     content = tk.Entry(self.name_table, width=10)
+        #     content.insert(0, name_rule.key)
+        #     content.grid(row=i, column=1)
+        #     content.config(state="readonly")
+
+        #     sample_type = tk.Entry(self.name_table, width=10)
+        #     sample_type.insert(0, name_rule.sample_type)
+        #     sample_type.grid(row=i, column=2)
+        #     sample_type.config(state="readonly")
+
+        #     formula = tk.Entry(self.name_table, width=60)
+        #     formula.insert(0, name_rule.formula)
+        #     formula.grid(row=i, column=3)
+            
+         # 底部添加一个保存按钮 和 恢复默认值 按钮
+        save_name_button = tk.Button(self.config_name_window, text="保存", command=self.config_name_save)
+        save_name_button.pack(side="right", padx=10)
+        reset_name_button = tk.Button(self.config_name_window, text="恢复默认", command=self.config_name_reset)
+        reset_name_button.pack(side="right", padx=10)
+
 
     def config(self):
         self.config_window = tk.Toplevel(self.master)
@@ -155,10 +221,12 @@ class QCControlApp:
             content.grid(row=i, column=1)
             content.config(state="readonly")
 
-            sample = tk.Entry(self.table, width=10)
-            sample.insert(0, rule.scope)
+            # 将样本集范围转换为下拉框
+            sample = ttk.Combobox(self.table, width=15)
+            keys_as_tuples = [(key,) for key in name_rules.keys()]
+            sample["value"] = keys_as_tuples
+            sample.set(rule.scope)
             sample.grid(row=i, column=2)
-            sample.config(state="readonly")
 
             formula = tk.Entry(self.table, width=50)
             formula.insert(0, rule.formula)
@@ -220,6 +288,31 @@ class QCControlApp:
         # 关闭窗口
         self.config_window.destroy()
     
+    # 点击样本名配置保存按钮的响应方法
+    def config_name_save(self):
+        # 保存配置文件
+        # 从界面上获取数据，更新name_rules： 遍历self.name_table的所有行，获取样本名和规则，更新name_rules
+        for row in range(1, self.name_table.grid_size()[1]):
+            # Extract values from widgets
+            key = self.name_table.grid_slaves(row=row, column=1)[0].get()
+            formular = self.name_table.grid_slaves(row=row, column=2)[0].get()
+            name_rules[key] = formular
+        
+        # show rules
+        for key, value in name_rules.items():
+            print(key, value)
+        # 关闭窗口
+        self.config_name_window.destroy()
+        
+
+    # 点击恢复默认按钮的响应方法
+    def config_name_reset(self):
+         # 重置配置文件
+        name_rules = get_default_sample_name_rules()
+        # 关闭窗口
+        self.config_name_window.destroy()
+
+
     def about(self):
         messagebox.showinfo("关于", "QCControl 1.0\n\n作者：LuYuan\n\nEmail: ron.lu@qq.com")
 
@@ -227,4 +320,5 @@ class QCControlApp:
 root = tk.Tk()
 app = QCControlApp(root)
 rules = get_default_rules()
+name_rules = get_default_sample_name_rules()
 root.mainloop()

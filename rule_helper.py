@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 # from rules import QC_RULES
 
-
 # 保留时间(分析物)
 ana_rt = 'Analyte Retention Time (min)'
 # 保留时间(内标)
@@ -45,7 +44,7 @@ is_peak_area = "IS Peak Area (counts)"
 
 
 # 定义一个主方法，用户check规则的执行。输入参数为csv文件，输出为一个list，list中的每个元素为一个dict，dict中包含了每个规则的执行结果
-def check_rules(csv_file_name, rules):
+def check_rules(csv_file_name, rules, name_rules):
     # 读取csv文件
     df = pd.read_csv(csv_file_name+".csv", sep=',')
     
@@ -56,22 +55,22 @@ def check_rules(csv_file_name, rules):
         # matched_data initiate to empty dataframe
         matched_data = pd.DataFrame()
         # accord rule.No , call different check method
-        if rule.no == "1": matched_data = check_rule1(df, rule, csv_file_name)
-        elif rule.no == "2": matched_data = check_rule2(df, rule, csv_file_name)
-        elif rule.no == "3": matched_data = check_rule3(df, rule, csv_file_name)
-        elif rule.no == "4": matched_data = check_rule4(df, rule, csv_file_name)
-        elif rule.no == "5": matched_data = check_rule5(df, rule, csv_file_name)
-        elif rule.no == "6": matched_data = check_rule6(df, rule, csv_file_name)
-        elif rule.no == "7": matched_data = check_rule7(df, rule, csv_file_name)
-        elif rule.no == "8": matched_data = check_rule8(df, rule, csv_file_name)
-        elif rule.no == "9": matched_data = check_rule9(df, rule, csv_file_name)
-        elif rule.no == "10": matched_data = check_rule10(df, rule, csv_file_name)
-        elif rule.no == "11": matched_data = check_rule11(df, rule, csv_file_name)
-        elif rule.no == "12": matched_data = check_rule12(df, rule, csv_file_name)
-        elif rule.no == "13": matched_data = check_rule13(df, rule, csv_file_name)
-        elif rule.no == "14": matched_data = check_rule14(df, rule, csv_file_name)
-        elif rule.no == "15": matched_data = check_rule15(df, rule, csv_file_name)
-        # elif rule.no == "16": check_rule16(df, rule, csv_file_name)
+        if rule.no == "1": matched_data = check_rule1(df, rule, name_rules, csv_file_name)
+        elif rule.no == "2": matched_data = check_rule2(df, rule, name_rules, csv_file_name)
+        elif rule.no == "3": matched_data = check_rule3(df, rule, name_rules, csv_file_name)
+        elif rule.no == "4": matched_data = check_rule4(df, rule, name_rules, csv_file_name)
+        elif rule.no == "5": matched_data = check_rule5(df, rule, name_rules, csv_file_name)
+        elif rule.no == "6": matched_data = check_rule6(df, rule, name_rules, csv_file_name)
+        elif rule.no == "7": matched_data = check_rule7(df, rule, name_rules, csv_file_name)
+        elif rule.no == "8": matched_data = check_rule8(df, rule, name_rules, csv_file_name)
+        elif rule.no == "9": matched_data = check_rule9(df, rule, name_rules, csv_file_name)
+        elif rule.no == "10": matched_data = check_rule10(df, rule, name_rules, csv_file_name)
+        elif rule.no == "11": matched_data = check_rule11(df, rule, name_rules, csv_file_name)
+        elif rule.no == "12": matched_data = check_rule12(df, rule, name_rules, csv_file_name)
+        elif rule.no == "13": matched_data = check_rule13(df, rule, name_rules, csv_file_name)
+        elif rule.no == "14": matched_data = check_rule14(df, rule, name_rules, csv_file_name)
+        elif rule.no == "15": matched_data = check_rule15(df, rule, name_rules, csv_file_name)
+        # elif rule.no == "16": check_rule16(df, rule, name_rules, csv_file_name)
         else : pass
         result[rule] = matched_data
     
@@ -85,28 +84,30 @@ def check_rules(csv_file_name, rules):
 # "Param1": "",
 # "Param2": "0.02",
 # "Param3": ""
-def check_rule1(df, rule, excel_file_name):
+def check_rule1(odf, rule, name_rules, excel_file_name):
+    # 从DF中过滤出rule中对应的scope
+    name_formular = name_rules[rule.scope]
+    # name_formular的正则表达式，df的Sample Name列进行匹配，满足匹配的是我们要检验的数据
+    df = odf[odf['Sample Name'].str.match(name_formular)]
+
     # 1.1 获取分析物和内标的RT值, 并计算差值
     df['RT_diff'] = df[ana_rt] - df[is_rt]
     # 1.2 获取差值的绝对值
     df['RT_diff_abs'] = df['RT_diff'].abs()
     # 判断是否有小于0.02的值
     target = float(rule.param2)
-    print(target)
 
     # df['check_result'] = df['RT_diff_abs'].apply(lambda x: 'True' if x <= target else 'False', axis=1)
     tolerance = 1e-6
     df['check_result'] = df['RT_diff_abs'].apply(lambda x: 'True' if x < (target + tolerance) else 'False')
     # 获取所有为False的值
     df_false = df[df['check_result'] == 'False']
-    # 输出结果
-    print(df_false)
 
     # df_false 中保留 'Sample Name'  'Sample ID' 'Sample Type' 'Analyte Retention Time (min)' 'IS Retention Time (min)' 'RT_diff' 'RT_diff_abs'
     df_false = df_false[['Sample Name', 'Sample ID', 'Sample Type', ana_rt, is_rt, 'RT_diff', 'RT_diff_abs', 'check_result']]
     # 将数据写入excel文件的 sheet名为 rule_1
     with pd.ExcelWriter(excel_file_name + '.xlsx', mode='a') as writer:
-        df_false.to_excel(writer, sheet_name='rule_1', index=False)
+        df_false.to_excel(writer, sheet_name='色谱峰积分-1', index=False)
     
     return df_false
 
@@ -117,7 +118,12 @@ def check_rule1(df, rule, excel_file_name):
 # "Formula": "RT（保留时间-开始时间）≤0.1min；",
 # "Param1": "",
 # "Param2": "0.1",
-def check_rule2(df, rule, excel_file_name):
+def check_rule2(odf, rule, name_rules, excel_file_name):
+    # 从DF中过滤出rule中对应的scope
+    name_formular = name_rules[rule.scope]
+    # name_formular的正则表达式，df的Sample Name列进行匹配，满足匹配的是我们要检验的数据
+    df = odf[odf['Sample Name'].str.match(name_formular)]
+
     # 计算保留时间的差值
     df['RT_diff'] = df[ana_rt] - df[rt_start_time]
     # 判断是否有小于0.1的值
@@ -138,7 +144,7 @@ def check_rule2(df, rule, excel_file_name):
     
     # 将数据写入excel文件的 sheet名为 rule_2
     with pd.ExcelWriter(excel_file_name + '.xlsx', mode='a') as writer:
-        df_false.to_excel(writer, index=True, sheet_name='rule_2')
+        df_false.to_excel(writer, index=True, sheet_name='色谱峰积分-2')
     
     return df_false
 
@@ -148,7 +154,12 @@ def check_rule2(df, rule, excel_file_name):
 # "Formula": "RT（结束时间-保留时间）≤0.1min；",
 # "Param1": "",
 # "Param2": "0.1",
-def check_rule3(df, rule, excel_file_name):
+def check_rule3(odf, rule, name_rules, excel_file_name):
+    # 从DF中过滤出rule中对应的scope
+    name_formular = name_rules[rule.scope]
+    # name_formular的正则表达式，df的Sample Name列进行匹配，满足匹配的是我们要检验的数据
+    df = odf[odf['Sample Name'].str.match(name_formular)]
+
     # 计算保留时间的差值
     df['RT_diff'] = df[rt_end_time] - df[ana_rt]
     # 判断是否有小于0.1的值
@@ -169,7 +180,7 @@ def check_rule3(df, rule, excel_file_name):
     
     # 将数据写入excel文件的 sheet名为 rule_3
     with pd.ExcelWriter(excel_file_name + '.xlsx', mode='a') as writer:
-        df_false.to_excel(writer, index=True, sheet_name='rule_3')
+        df_false.to_excel(writer, index=True, sheet_name='色谱峰积分-3')
     
     return df_false
 
@@ -179,7 +190,12 @@ def check_rule3(df, rule, excel_file_name):
 # "Formula": "分析物和内标峰宽≤0.3min；",
 # "Param1": "",
 # "Param2": "0.3",
-def check_rule4(df, rule, excel_file_name):
+def check_rule4(odf, rule, name_rules, excel_file_name):
+    # 从DF中过滤出rule中对应的scope
+    name_formular = name_rules[rule.scope]
+    # name_formular的正则表达式，df的Sample Name列进行匹配，满足匹配的是我们要检验的数据
+    df = odf[odf['Sample Name'].str.match(name_formular)]
+
     # 取得峰宽的目标值
     target = float(rule.param2)
     tolerance = 1e-6
@@ -199,7 +215,7 @@ def check_rule4(df, rule, excel_file_name):
 
     # 将数据写入excel文件的 sheet名为 rule_4
     with pd.ExcelWriter(excel_file_name + '.xlsx', mode='a') as writer:
-        df_false.to_excel(writer, index=True, sheet_name='rule_4')
+        df_false.to_excel(writer, index=True, sheet_name='色谱峰积分-4')
     
     return df_false
 
@@ -209,7 +225,12 @@ def check_rule4(df, rule, excel_file_name):
 # "Formula": "分析物和内标半峰宽≤0.15min；",
 # "Param1": "",
 # "Param2": "0.15",
-def check_rule5(df, rule, excel_file_name):
+def check_rule5(odf, rule, name_rules, excel_file_name):
+    # 从DF中过滤出rule中对应的scope
+    name_formular = name_rules[rule.scope]
+    # name_formular的正则表达式，df的Sample Name列进行匹配，满足匹配的是我们要检验的数据
+    df = odf[odf['Sample Name'].str.match(name_formular)]
+
     # 取得半峰宽的目标值
     target = float(rule.param2)
     tolerance = 1e-6
@@ -229,7 +250,7 @@ def check_rule5(df, rule, excel_file_name):
 
     # 将数据写入excel文件的 sheet名为 rule_5
     with pd.ExcelWriter(excel_file_name + '.xlsx', mode='a') as writer:
-        df_false.to_excel(writer, index=True, sheet_name='rule_5')
+        df_false.to_excel(writer, index=True, sheet_name='色谱峰积分-5')
     
     return df_false
     
@@ -240,7 +261,12 @@ def check_rule5(df, rule, excel_file_name):
 # "Formula": "分析物和内标的峰不对成性：0.8~2；",
 # "Param1": "0.8",
 # "Param2": "2",
-def check_rule6(df, rule, excel_file_name):
+def check_rule6(odf, rule, name_rules, excel_file_name):
+    # 从DF中过滤出rule中对应的scope
+    name_formular = name_rules[rule.scope]
+    # name_formular的正则表达式，df的Sample Name列进行匹配，满足匹配的是我们要检验的数据
+    df = odf[odf['Sample Name'].str.match(name_formular)]
+
     # 取得不对成性的目标值
     target_min = float(rule.param1)
     target_max = float(rule.param2)
@@ -262,7 +288,7 @@ def check_rule6(df, rule, excel_file_name):
 
     # 将数据写入excel文件的 sheet名为 rule_6
     with pd.ExcelWriter(excel_file_name + '.xlsx', mode='a') as writer:
-        df_false.to_excel(writer, index=True, sheet_name='rule_6')
+        df_false.to_excel(writer, index=True, sheet_name='色谱峰积分-6')
     
     return df_false
 
@@ -272,7 +298,12 @@ def check_rule6(df, rule, excel_file_name):
 # "Formula": "分析物和内标的积分完整性：0.9~1。",
 # "Param1": "0.9",
 # "Param2": "1",
-def check_rule7(df, rule, excel_file_name):
+def check_rule7(odf, rule, name_rules, excel_file_name):
+    # 从DF中过滤出rule中对应的scope
+    name_formular = name_rules[rule.scope]
+    # name_formular的正则表达式，df的Sample Name列进行匹配，满足匹配的是我们要检验的数据
+    df = odf[odf['Sample Name'].str.match(name_formular)]
+
     # 取得积分完整性的目标值
     target_min = float(rule.param1)
     target_max = float(rule.param2)
@@ -294,7 +325,7 @@ def check_rule7(df, rule, excel_file_name):
 
     # 将数据写入excel文件的 sheet名为 rule_7
     with pd.ExcelWriter(excel_file_name + '.xlsx', mode='a') as writer:
-        df_false.to_excel(writer, index=True, sheet_name='rule_7')
+        df_false.to_excel(writer, index=True, sheet_name='色谱峰积分-7')
     
     return df_false
 
@@ -304,7 +335,12 @@ def check_rule7(df, rule, excel_file_name):
 # "Formula": "RT（单个样本-均值）绝对值≤0.1min",
 # "Param1": "",
 # "Param2": "0.1",
-def check_rule8(df, rule, excel_file_name):
+def check_rule8(odf, rule, name_rules, excel_file_name):
+    # 从DF中过滤出rule中对应的scope
+    name_formular = name_rules[rule.scope]
+    # name_formular的正则表达式，df的Sample Name列进行匹配，满足匹配的是我们要检验的数据
+    df = odf[odf['Sample Name'].str.match(name_formular)]
+
     # 取得RT的目标值
     target = float(rule.param2)
     tolerance = 1e-6
@@ -329,7 +365,7 @@ def check_rule8(df, rule, excel_file_name):
 
     # 将数据写入excel文件的 sheet名为 rule_8
     with pd.ExcelWriter(excel_file_name + '.xlsx', mode='a') as writer:
-        df_false.to_excel(writer, index=True, sheet_name='rule_8')
+        df_false.to_excel(writer, index=True, sheet_name='保留时间偏差')
     
     return df_false
 
@@ -340,9 +376,12 @@ def check_rule8(df, rule, excel_file_name):
 # "Formula": "每个STD样本的准确度均在85-115%之间，若有标准曲线样本准确度超出该范围，则按照偏差从大到小标识样本，并提示检查积分或者依次剔除样本",
 # "Param1": "85",
 # "Param2": "115"
-def check_rule9(df, rule, excel_file_name):
-    # filter df by Sample Name start with STD
-    df_std = df[df['Sample Name'].str.startswith('STD')]
+def check_rule9(odf, rule, name_rules, excel_file_name):
+    # 从DF中过滤出rule中对应的scope
+    name_formular = name_rules[rule.scope]
+    # name_formular的正则表达式，df的Sample Name列进行匹配，满足匹配的是我们要检验的数据
+    df_std = odf[odf['Sample Name'].str.match(name_formular)]
+    # 输出df_std
 
     # 取得准确度的目标值
     target_min = float(rule.param1)
@@ -365,7 +404,7 @@ def check_rule9(df, rule, excel_file_name):
 
     # 将数据写入excel文件的 sheet名为 rule_9
     with pd.ExcelWriter(excel_file_name + '.xlsx', mode='a') as writer:
-        df_std_false.to_excel(writer, index=True, sheet_name='rule_9')
+        df_std_false.to_excel(writer, index=True, sheet_name='标准曲线准确度')
     
     return df_std_false
 
@@ -377,9 +416,11 @@ def check_rule9(df, rule, excel_file_name):
 # "Param1": "85",
 # "Param2": "115"
 # "Param2": "75"
-def check_rule10(df, rule, excel_file_name):
-    # filter df by Sample Name start with STD
-    df_std = df[df['Sample Name'].str.startswith('STD')]
+def check_rule10(odf, rule, name_rules, excel_file_name):
+    # 从DF中过滤出rule中对应的scope
+    name_formular = name_rules[rule.scope]
+    # name_formular的正则表达式，df的Sample Name列进行匹配，满足匹配的是我们要检验的数据
+    df_std = odf[odf['Sample Name'].str.match(name_formular)]
 
     # 获取STD的总数量
     std_total_count = len(df_std)
@@ -409,7 +450,7 @@ def check_rule10(df, rule, excel_file_name):
 
     # 将数据写入excel文件的 sheet名为 rule_10
     with pd.ExcelWriter(excel_file_name + '.xlsx', mode='a') as writer:
-        df_std_false.to_excel(writer, index=True, sheet_name='rule_10')
+        df_std_false.to_excel(writer, index=True, sheet_name='标准曲线数量')
 
     return df_std_false 
 
@@ -420,10 +461,12 @@ def check_rule10(df, rule, excel_file_name):
 # "Param1": "0.99",
 # "Param2": "",
 # "Param3": ""
-def check_rule11(df, rule, excel_file_name):
-    # filter df by Sample Name start with STD
-    df_std = df[df['Sample Name'].str.startswith('STD')]
-
+def check_rule11(odf, rule, name_rules, excel_file_name):
+    # 从DF中过滤出rule中对应的scope
+    name_formular = name_rules[rule.scope]
+    print(f'rule11 name formular {name_formular}')
+    # name_formular的正则表达式，df的Sample Name列进行匹配，满足匹配的是我们要检验的数据
+    df_std = odf[odf['Sample Name'].str.match(name_formular)]
     # 取得斜率的目标值
     target_min = float(rule.param1)
 
@@ -444,7 +487,7 @@ def check_rule11(df, rule, excel_file_name):
 
     # 将数据写入excel文件的 sheet名为 rule_11
     with pd.ExcelWriter(excel_file_name + '.xlsx', mode='a') as writer:
-        df_std_false.to_excel(writer, index=True, sheet_name='rule_11')
+        df_std_false.to_excel(writer, index=True, sheet_name='标准曲线相关系数')
     
     return df_std_false
 
@@ -456,13 +499,17 @@ def check_rule11(df, rule, excel_file_name):
 # "Param1": "",
 # "Param2": "20",
 # "Param3": ""
-def check_rule12(df, rule, excel_file_name):
-    # filter df by Sample Name start with Blank
-    df_blank = df[df['Sample Name'].str.startswith('BLANK')]
+def check_rule12(odf, rule, name_rules, excel_file_name):
+    # 从DF中过滤出rule中对应的scope
+    name_formular = name_rules[rule.scope]
+    print(f'rule12 name formular {name_formular}')
+    # name_formular的正则表达式，df的Sample Name列进行匹配，满足匹配的是我们要检验的数据
+    df_blank = odf[odf['Sample Name'].str.match(name_formular)]
 
     # 取得STD1的峰面积均值
-    df_std1 = df[df['Sample Name'].str.startswith('STD')]
-    std1_area_mean = df_std1[ana_peak_area].mean()   # 最小值没有体现 TODO
+    std1_formular = name_rules['标准曲线最低点（STD-1）']
+    df_std1 = odf[odf['Sample Name'].str.match(std1_formular)]
+    std1_area_mean = df_std1[ana_peak_area].mean()
 
     # 计算标准曲线最低点（STD1）峰面积均值g的20%
     target_max = std1_area_mean * float(rule.param2) / 100
@@ -480,7 +527,7 @@ def check_rule12(df, rule, excel_file_name):
 
     # 将数据写入excel文件的 sheet名为 rule_12
     with pd.ExcelWriter(excel_file_name + '.xlsx', mode='a') as writer:
-        df_blank_false.to_excel(writer, index=True, sheet_name='rule_12')
+        df_blank_false.to_excel(writer, index=True, sheet_name='残留-1')
     
     return df_blank_false
 
@@ -491,12 +538,15 @@ def check_rule12(df, rule, excel_file_name):
 # "Param1": "",
 # "Param2": "5",
 # "Param3": ""
-def check_rule13(df, rule, excel_file_name):
-    # filter df by Sample Name start with Blank
-    df_blank = df[df['Sample Name'].str.startswith('BLANK')]
+def check_rule13(odf, rule, name_rules, excel_file_name):
+    # 从DF中过滤出rule中对应的scope
+    name_formular = name_rules[rule.scope]
+    # name_formular的正则表达式，df的Sample Name列进行匹配，满足匹配的是我们要检验的数据
+    df_blank = odf[odf['Sample Name'].str.match(name_formular)]
 
-    # 取得内标峰面积均值
-    df_std1 = df[df['Sample Name'].str.startswith('STD')]
+    # 取得STD1的峰面积均值
+    std_formular = name_rules['标准样本']
+    df_std1 = odf[odf['Sample Name'].str.match(std_formular)]
     is_area_mean = df_std1[is_peak_area].mean()
 
     # 计算内标峰面积均值的5%
@@ -515,7 +565,7 @@ def check_rule13(df, rule, excel_file_name):
 
     # 将数据写入excel文件的 sheet名为 rule_13
     with pd.ExcelWriter(excel_file_name + '.xlsx', mode='a') as writer:
-        df_blank_false.to_excel(writer, index=True, sheet_name='rule_13')
+        df_blank_false.to_excel(writer, index=True, sheet_name='残留-2')
     
     return df_blank_false
 
@@ -526,13 +576,17 @@ def check_rule13(df, rule, excel_file_name):
 # "Param1": "",
 # "Param2": "20",
 # "Param3": ""
-def check_rule14(df, rule, excel_file_name):
-    # filter df by Sample Name start with QC0
-    df_qc0 = df[df['Sample Name'].str.startswith('QC0')]
+def check_rule14(odf, rule, name_rules, excel_file_name):
+    # 从DF中过滤出rule中对应的scope
+    name_formular = name_rules[rule.scope]
+    print(f'rule14 name formular {name_formular}')
+    # name_formular的正则表达式，df的Sample Name列进行匹配，满足匹配的是我们要检验的数据
+    df_qc0 = odf[odf['Sample Name'].str.match(name_formular)]
 
     # 取得STD1的峰面积均值
-    df_std1 = df[df['Sample Name'].str.startswith('STD')]
-    std1_area_mean = df_std1[ana_peak_area].mean()   # 最小值没有体现 TODO
+    std1_formular = name_rules['标准曲线最低点（STD-1）']
+    df_std1 = odf[odf['Sample Name'].str.match(std1_formular)]
+    std1_area_mean = df_std1[ana_peak_area].mean()
 
     # 计算标准曲线最低点（STD1）峰面积均值g的20%
     target_max = std1_area_mean * float(rule.param2) / 100
@@ -550,7 +604,7 @@ def check_rule14(df, rule, excel_file_name):
 
     # 将数据写入excel文件的 sheet名为 rule_14
     with pd.ExcelWriter(excel_file_name + '.xlsx', mode='a') as writer:
-        df_qc0_false.to_excel(writer, index=True, sheet_name='rule_14')
+        df_qc0_false.to_excel(writer, index=True, sheet_name='内标干扰')
     
     return df_qc0_false
 
@@ -561,11 +615,12 @@ def check_rule14(df, rule, excel_file_name):
 # "Param1": "50",
 # "Param2": "150",
 # "Param3": ""
-def check_rule15(df, rule, excel_file_name):
-    # filter out 临床样本
-    # filter df by Sample Name , construct by only digtal 
-    df_unknow = df[df['Sample Name'].str.match(r'^\d+$')]
-    
+def check_rule15(odf, rule, name_rules, excel_file_name):
+    # 从DF中过滤出rule中对应的scope
+    name_formular = name_rules[rule.scope]
+    print(f'rule15 name formular {name_formular}')
+    # name_formular的正则表达式，df的Sample Name列进行匹配，满足匹配的是我们要检验的数据
+    df_unknow = odf[odf['Sample Name'].str.match(name_formular)]
 
     # 取得所有临床样本内标峰面积均值
     is_area_mean = df_unknow[is_peak_area].mean()
@@ -589,7 +644,7 @@ def check_rule15(df, rule, excel_file_name):
 
     # 将数据写入excel文件的 sheet名为 rule_15
     with pd.ExcelWriter(excel_file_name + '.xlsx', mode='a') as writer:
-        df_unkown_false.to_excel(writer, index=True, sheet_name='rule_15')
+        df_unkown_false.to_excel(writer, index=True, sheet_name='内标峰面积')
     
     return df_unkown_false
 
@@ -600,10 +655,11 @@ def check_rule15(df, rule, excel_file_name):
 # "Param1": "80",
 # "Param2": "120",
 # "Param3": ""
-def check_rule16(df, rule, excel_file_name):
-    # filter out 临床样本
-    # filter df by Sample Name , construct by only digtal 
-    df_unknow = df[df['Sample Name'].str.match(r'^\d+$')]
+def check_rule16(odf, rule, name_rules, excel_file_name):
+    # 从DF中过滤出rule中对应的scope
+    name_formular = name_rules[rule.scope]
+    # name_formular的正则表达式，df的Sample Name列进行匹配，满足匹配的是我们要检验的数据
+    df_unknow = odf[odf['Sample Name'].str.match(name_formular)]
 
     # 取得所有临床样本内标峰面积均值
     ana_area_mean = df_unknow[ana_peak_area].mean()
@@ -627,6 +683,6 @@ def check_rule16(df, rule, excel_file_name):
 
     # 将数据写入excel文件的 sheet名为 rule_16
     with pd.ExcelWriter(excel_file_name + '.xlsx', mode='a') as writer:
-        df_unkown_false.to_excel(writer, index=True, sheet_name='rule_16')
+        df_unkown_false.to_excel(writer, index=True, sheet_name='定量/定性比值')
     
     return df_unkown_false

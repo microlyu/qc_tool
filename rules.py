@@ -75,7 +75,7 @@ JSON_RULES = [
     {
         "No": "9",
         "Type": "标准曲线准确度",
-        "Scope": "STD",
+        "Scope": "标准样本",
         "Formula": "每个STD样本的准确度均在85-115%之间，若有标准曲线样本准确度超出该范围，则按照偏差从大到小标识样本，并提示检查积分或者依次剔除样本",
         "Param1": "85",
         "Param2": "115",
@@ -84,7 +84,7 @@ JSON_RULES = [
     {
         "No": "10",
         "Type": "标准曲线数量",
-        "Scope": "STD",
+        "Scope": "标准样本",
         "Formula": "有效标曲样本(准确度均在85-115%之间)不少于总标准曲线样本数量的75%",
         "Param1": "85",
         "Param2": "115",
@@ -93,7 +93,7 @@ JSON_RULES = [
     {
         "No": "11",
         "Type": "标准曲线斜率",
-        "Scope": "STD",
+        "Scope": "标准样本",
         "Formula": "≥0.99",
         "Param1": "0.99",
         "Param2": "",
@@ -102,8 +102,8 @@ JSON_RULES = [
     {
         "No": "12",
         "Type": "残留",
-        "Scope": "Blank",
-        "Formula": "分析物峰面积≤标准曲线最低点（STD1）峰面积均值g的20%；",
+        "Scope": "空白样本",
+        "Formula": "分析物峰面积≤标准曲线最低点（STD1）峰面积均值的20%；",
         "Param1": "",
         "Param2": "20",
         "Param3": ""
@@ -111,7 +111,7 @@ JSON_RULES = [
     {
         "No": "13",
         "Type": "残留",
-        "Scope": "Blank",
+        "Scope": "空白样本",
         "Formula": "内标峰面积≤内标峰面积均值的5%",
         "Param1": "",
         "Param2": "5",
@@ -120,7 +120,7 @@ JSON_RULES = [
     {
         "No": "14",
         "Type": "内标干扰",
-        "Scope": "QC0",
+        "Scope": "QC0样本",
         "Formula": "分析物峰面积≤标准曲线最低点（STD1）峰面积均值的20%",
         "Param1": "",
         "Param2": "20",
