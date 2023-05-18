@@ -11,7 +11,7 @@ NAME_RULES = [
     },
     {
         "SampleType": "标准样本中的正常样本集合",
-        "Formula": "^STD.*[-345]$"
+        "Formula": "^STD.*-(3|4|5)$"
     },
     {
         "SampleType": "质控样本",

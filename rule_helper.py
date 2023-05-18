@@ -70,10 +70,12 @@ def check_rules(csv_file_name, rules, name_rules):
         elif rule.no == "13": matched_data = check_rule13(df, rule, name_rules, csv_file_name)
         elif rule.no == "14": matched_data = check_rule14(df, rule, name_rules, csv_file_name)
         elif rule.no == "15": matched_data = check_rule15(df, rule, name_rules, csv_file_name)
-        # elif rule.no == "16": check_rule16(df, rule, name_rules, csv_file_name)
+        elif rule.no == "16": check_rule16(df, rule, name_rules, csv_file_name)
         else : pass
         result[rule] = matched_data
     
+    # 提取DF中的临床样本及浓度数据
+    filter_out_concentration(df, name_rules, csv_file_name)
     return result
 
 # 定义一个方法，用于执行规则1的检查 
@@ -662,11 +664,20 @@ def check_rule16(odf, rule, name_rules, excel_file_name):
     df_unknow = odf[odf['Sample Name'].str.match(name_formular)]
 
     # 取得所有临床样本内标峰面积均值
-    ana_area_mean = df_unknow[ana_peak_area].mean()
+    # ana_area_mean = df_unknow[ana_peak_area].mean()
+
+     # 取得STD3-5的峰面积均值
+    std1_formular = name_rules['标准样本中的正常样本集合']
+    print(f'rule16 std1 formular {std1_formular}')
+    df_std_normal = odf[odf['Sample Name'].str.match(std1_formular)]
+    print(df_std_normal)
+    std1_area_mean = df_std_normal[ana_peak_area].mean()
+
+
 
     # 计算所有临床样本内标峰面积均值的80~120%
-    target_min = ana_area_mean * float(rule.param1) / 100
-    target_max = ana_area_mean * float(rule.param2) / 100
+    target_min = std1_area_mean * float(rule.param1) / 100
+    target_max = std1_area_mean * float(rule.param2) / 100
     df_unknow['80% of Analyte Area Mean'] = target_min
     df_unknow['120% of Analyte Area Mean'] = target_max
     tolerance = 1e-6
@@ -683,6 +694,21 @@ def check_rule16(odf, rule, name_rules, excel_file_name):
 
     # 将数据写入excel文件的 sheet名为 rule_16
     with pd.ExcelWriter(excel_file_name + '.xlsx', mode='a') as writer:
-        df_unkown_false.to_excel(writer, index=True, sheet_name='定量/定性比值')
+        df_unkown_false.to_excel(writer, index=True, sheet_name='定量定性比值')
     
     return df_unkown_false
+
+
+def filter_out_concentration(odf, name_rules, excel_file_name):
+    name_formular = name_rules['临床样本']
+    # name_formular的正则表达式，df的Sample Name列进行匹配，满足匹配的是我们要检验的数据
+    df_unkown = odf[odf['Sample Name'].str.match(name_formular)]
+
+    
+    # df_sample_false 中保留 'Sample Name'  'Analyte Peak Name' 'Calculated Concentration (ng/mL)' 'Calculated Concentration for DAD (ng/mL)' 'Accuracy (%)'
+    df_unkown = df_unkown[['Sample Name', 'Analyte Peak Name', 'Calculated Concentration (ng/mL)', 'Calculated Concentration for DAD (ng/mL)', 'Accuracy (%)']]
+
+    # 将数据写入excel文件的 sheet名为 rule_16
+    with pd.ExcelWriter(excel_file_name + '.xlsx', mode='a') as writer:
+        df_unkown.to_excel(writer, index=True, sheet_name='浓度报告')
+    

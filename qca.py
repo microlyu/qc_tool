@@ -23,7 +23,7 @@ import os
 class QCControlApp:
     def __init__(self, master):
         self.master = master
-        master.title("徐中心质控数据分析小工具")
+        master.title("徐中心质控数据分析工具")
         # 设定窗口大小 1080*720
         # 设定窗口大小为屏幕大小
         master.state("zoomed")
@@ -33,7 +33,7 @@ class QCControlApp:
         column_size=5
 
         # First row
-        self.title_label = tk.Label(master, text="徐中心质控数据分析小工具", font=("Helvetica", 24))
+        self.title_label = tk.Label(master, text="徐中心质控数据分析工具", font=("Helvetica", 24))
         # 占据整个窗口大小，并居中
         self.title_label.grid(row=row_index, column=0, columnspan=column_size-1, sticky="nsew", padx=10, pady=10)
         self.owner_info = tk.Button(master, text="?", command=self.about)
@@ -128,6 +128,7 @@ class QCControlApp:
 
         except Exception as e:
             self.output_text.insert(tk.END, f"数据检查过程中发生错误：\n {e}\n")
+            e.print_stack()
 
         
     def clear_output(self):
